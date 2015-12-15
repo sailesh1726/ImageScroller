@@ -1,4 +1,4 @@
-package com.sparks.techie.imagescroller;
+package com.sparks.techie.imagescroller.Model;
 
 
 public class AccessTokenModel {

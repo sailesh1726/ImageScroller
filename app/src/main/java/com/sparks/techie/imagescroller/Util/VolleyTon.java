@@ -1,4 +1,4 @@
-package com.sparks.techie.imagescroller;
+package com.sparks.techie.imagescroller.Util;
 
 
 import android.app.Application;

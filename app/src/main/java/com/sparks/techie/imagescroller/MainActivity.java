@@ -1,61 +1,58 @@
 package com.sparks.techie.imagescroller;
 
-import android.os.AsyncTask;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.webkit.WebView;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
+import android.support.v4.app.Fragment;
 
-import org.json.JSONObject;
-import org.json.JSONTokener;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.net.URL;
-
-import javax.net.ssl.HttpsURLConnection;
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.google.gson.Gson;
+import com.sparks.techie.imagescroller.Model.InstaImageModel;
+import com.sparks.techie.imagescroller.Util.Constants;
+import com.sparks.techie.imagescroller.Util.PreferenceHelper;
+import com.sparks.techie.imagescroller.Util.VolleyTon;
 
 
 public class MainActivity extends ActionBarActivity {
     public String authURLString;
-
-   // public String tokenURLString;
-    private LinearLayout linearLayout;
-    private String accessTokenString;
     private String access_token;
     private PreferenceHelper preferenceHelper;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        linearLayout= (LinearLayout) findViewById(R.id.main_linear);
-
         authURLString = Constants.AUTHURL + "?client_id=" + Constants.CLIENT_ID + "&redirect_uri=" + Constants.CALLBACKURL +
                 "&response_type=code";
 
-        preferenceHelper= new PreferenceHelper(this);
-        access_token= preferenceHelper.getToken();
-        if(access_token==null) {
-            WebView webView = new WebView(this);
-            webView.setVerticalScrollBarEnabled(false);
-            webView.setHorizontalScrollBarEnabled(false);
-            webView.setWebViewClient(new AuthWebViewClient(this));
-            webView.getSettings().setJavaScriptEnabled(true);
-            webView.loadUrl(authURLString);
-
-            linearLayout.addView(webView);
+        preferenceHelper = new PreferenceHelper(this);
+        access_token = preferenceHelper.getToken();
+        if (access_token == null)
+            showDialog();
+        else {
+            fetchData();
         }
-// tokenURLString = Constants.TOKENURL + "?client_id=" + Constants.CLIENT_ID + "&client_secret=" + Constants.CLIENT_SECRET
-//                + "&redirect_uri=" + Constants.CALLBACKURL + "&grant_type=authorization_code";
     }
 
+    void showDialog() {
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        Fragment prev = getSupportFragmentManager().findFragmentByTag("dialog");
+        if (prev != null) {
+            ft.remove(prev);
+        }
+        ft.addToBackStack(null);
+
+        // Create and show the dialog.
+        DialogFragment newFragment = new LoginDialog();
+        newFragment.show(ft, "dialog");
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -77,5 +74,31 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    public void fetchData() {
 
+
+        preferenceHelper = new PreferenceHelper(this);
+        access_token = preferenceHelper.getToken();
+        String url = Constants.APIURL + "/tags/" + Constants.TAG_NAME + "/media/recent" + "/?access_token=" + access_token;
+
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                response.length();
+                Gson gson = new Gson();
+                InstaImageModel instaImageModel = gson.fromJson(response, InstaImageModel.class);
+                instaImageModel.getData();
+
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+            }
+        });
+
+        VolleyTon.getInstance().addToRequestQueue(stringRequest);
+
+
+    }
 }
